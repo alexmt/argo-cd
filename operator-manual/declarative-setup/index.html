@@ -10,7 +10,7 @@
       
       
       <link rel="shortcut icon" href="../../assets/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.8">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.0.2">
     
     
       
@@ -18,10 +18,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.cb6bc1d0.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.1655a90d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.39b8e14a.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.7fa14f5b.min.css">
         
           
           
@@ -35,7 +35,7 @@
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Work+Sans:300,400,400i,700%7C&display=fallback">
-        <style>body,input{font-family:"Work Sans",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"",SFMono-Regular,Consolas,Menlo,monospace}</style>
+        <style>:root{--md-text-font-family:"Work Sans";--md-code-font-family:""}</style>
       
     
     
@@ -45,7 +45,7 @@
     
       
         
-<script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-105170809-2","auto"),ga("set","anonymizeIp",!0),ga("send","pageview"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}),document.addEventListener("DOMContentSwitch",function(){ga("send","pageview",document.location.pathname)})</script>
+<script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-105170809-2","auto"),ga("set","anonymizeIp",!0),ga("send","pageview"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){var e;this.value&&(e=document.location.pathname,ga("send","pageview",e+"?q="+this.value))}),"undefined"!=typeof location$&&location$.subscribe(function(e){ga("send","pageview",e.pathname)})})</script>
 <script async src="https://www.google-analytics.com/analytics.js"></script>
       
     
@@ -80,23 +80,23 @@
       
 
 <header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid" aria-label="Header">
-    <a href="../.." title="Argo CD - Declarative GitOps CD for Kubernetes" class="md-header-nav__button md-logo" aria-label="Argo CD - Declarative GitOps CD for Kubernetes">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Argo CD - Declarative GitOps CD for Kubernetes" class="md-header__button md-logo" aria-label="Argo CD - Declarative GitOps CD for Kubernetes">
       
   <img src="../../assets/logo.png" alt="logo">
 
     </a>
-    <label class="md-header-nav__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
     </label>
-    <div class="md-header-nav__title" data-md-component="header-title">
-      <div class="md-header-nav__ellipsis">
-        <div class="md-header-nav__topic">
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
           <span class="md-ellipsis">
             Argo CD - Declarative GitOps CD for Kubernetes
           </span>
         </div>
-        <div class="md-header-nav__topic">
+        <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
               Declarative Setup
@@ -105,9 +105,12 @@
         </div>
       </div>
     </div>
+    <div class="md-header__options">
+      
+    </div>
     
-      <label class="md-header-nav__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
       </label>
       
 <div class="md-search" data-md-component="search" role="dialog">
@@ -116,10 +119,10 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
       </label>
-      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
       </button>
     </form>
@@ -137,12 +140,12 @@
 </div>
     
     
-      <div class="md-header-nav__source">
+      <div class="md-header__source">
         
-<a href="https://github.com/argoproj/argo-cd/" title="Go to repository" class="md-source">
+<a href="https://github.com/argoproj/argo-cd/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -163,7 +166,7 @@
           
             
               
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -183,10 +186,10 @@
   
     <div class="md-nav__source">
       
-<a href="https://github.com/argoproj/argo-cd/" title="Go to repository" class="md-source">
+<a href="https://github.com/argoproj/argo-cd/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -269,19 +272,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
       
-      <label class="md-nav__link" for="nav-5">
+      <label class="md-nav__link" for="__nav_5">
         Operator Manual
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="Operator Manual" data-md-level="1">
-        <label class="md-nav__title" for="nav-5">
+        <label class="md-nav__title" for="__nav_5">
           <span class="md-nav__icon md-icon"></span>
           Operator Manual
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -340,7 +342,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#quick-reference" class="md-nav__link">
@@ -402,6 +404,13 @@
           <li class="md-nav__item">
   <a href="#https-repositories" class="md-nav__link">
     HTTPS repositories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-app-repositories" class="md-nav__link">
+    GitHub App repositories
   </a>
   
 </li>
@@ -493,19 +502,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5-5" type="checkbox" id="nav-5-5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_5" type="checkbox" id="__nav_5_5" >
       
-      <label class="md-nav__link" for="nav-5-5">
+      <label class="md-nav__link" for="__nav_5_5">
         User Management
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="User Management" data-md-level="2">
-        <label class="md-nav__title" for="nav-5-5">
+        <label class="md-nav__title" for="__nav_5_5">
           <span class="md-nav__icon md-icon"></span>
           User Management
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -773,19 +781,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5-18" type="checkbox" id="nav-5-18" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_18" type="checkbox" id="__nav_5_18" >
       
-      <label class="md-nav__link" for="nav-5-18">
+      <label class="md-nav__link" for="__nav_5_18">
         Server Configuration Parameters
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="Server Configuration Parameters" data-md-level="2">
-        <label class="md-nav__title" for="nav-5-18">
+        <label class="md-nav__title" for="__nav_5_18">
           <span class="md-nav__icon md-icon"></span>
           Server Configuration Parameters
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -861,19 +868,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-5-20" type="checkbox" id="nav-5-20" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_20" type="checkbox" id="__nav_5_20" >
       
-      <label class="md-nav__link" for="nav-5-20">
+      <label class="md-nav__link" for="__nav_5_20">
         Upgrading
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="Upgrading" data-md-level="2">
-        <label class="md-nav__title" for="nav-5-20">
+        <label class="md-nav__title" for="__nav_5_20">
           <span class="md-nav__icon md-icon"></span>
           Upgrading
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -1006,19 +1012,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
       
-      <label class="md-nav__link" for="nav-6">
+      <label class="md-nav__link" for="__nav_6">
         User Guide
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="User Guide" data-md-level="1">
-        <label class="md-nav__title" for="nav-6">
+        <label class="md-nav__title" for="__nav_6">
           <span class="md-nav__icon md-icon"></span>
           User Guide
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -1385,19 +1390,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="nav-7" type="checkbox" id="nav-7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
       
-      <label class="md-nav__link" for="nav-7">
+      <label class="md-nav__link" for="__nav_7">
         Developer Guide
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="Developer Guide" data-md-level="1">
-        <label class="md-nav__title" for="nav-7">
+        <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           Developer Guide
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
-          
           
             
   
@@ -1524,6 +1528,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../developer-guide/static-code-analysis/" class="md-nav__link">
+        Static Code Analysis
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../developer-guide/faq/" class="md-nav__link">
         Contribution FAQ
       </a>
@@ -1635,7 +1651,7 @@
             
             
               
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -1649,7 +1665,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#quick-reference" class="md-nav__link">
@@ -1711,6 +1727,13 @@
           <li class="md-nav__item">
   <a href="#https-repositories" class="md-nav__link">
     HTTPS repositories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-app-repositories" class="md-nav__link">
+    GitHub App repositories
   </a>
   
 </li>
@@ -1782,7 +1805,7 @@
               </div>
             
           
-          <div class="md-content">
+          <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
                 
@@ -1981,7 +2004,7 @@ adapt your repository URL to be suffixed with <code>.git</code>.</p>
 <ol>
 <li>Create secret which contains repository credentials. Consider using <a href="https://github.com/bitnami-labs/sealed-secrets">bitnami-labs/sealed-secrets</a> to store encrypted secret
 definition as a Kubernetes manifest.</li>
-<li>Register repository in the <code>argocd-cm</code> config map. Each repository must have <code>url</code> field and, depending on whether you connect using HTTPS or SSH, <code>usernameSecret</code> and <code>passwordSecret</code> (for HTTPS) or <code>sshPrivateKeySecret</code> (for SSH).</li>
+<li>Register repository in the <code>argocd-cm</code> config map. Each repository must have <code>url</code> field and, depending on whether you connect using HTTPS, SSH, or GitHub App, <code>usernameSecret</code> and <code>passwordSecret</code> (for HTTPS), <code>sshPrivateKeySecret</code> (for SSH), <code>githubAppPrivateKeySecret</code> (for GitHub App).</li>
 </ol>
 <p>Example for HTTPS:</p>
 <div class="codehilite"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">v1</span>
@@ -2020,6 +2043,36 @@ definition as a Kubernetes manifest.</li>
         <span class="no">key: sshPrivateKey</span>
 </code></pre></div>
 
+<blockquote>
+<p>v1.9 or later</p>
+</blockquote>
+<p>Example for GitHub App:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">kind</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">ConfigMap</span>
+<span class="nt">metadata</span><span class="p">:</span>
+  <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">argocd-cm</span>
+  <span class="nt">namespace</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">argocd</span>
+  <span class="nt">labels</span><span class="p">:</span>
+    <span class="nt">app.kubernetes.io/name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">argocd-cm</span>
+    <span class="nt">app.kubernetes.io/part-of</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">argocd</span>
+<span class="nt">data</span><span class="p">:</span>
+  <span class="nt">repositories</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+    <span class="no">- url: https://github.com/argoproj/my-private-repository</span>
+      <span class="no">githubAppID: 1</span>
+      <span class="no">githubAppInstallationID: 2</span>
+      <span class="no">githubAppPrivateKeySecret:</span>
+        <span class="no">name: my-secret</span>
+        <span class="no">key: githubAppPrivateKey</span>
+
+    <span class="no">- url: https://ghe.example.com/argoproj/my-private-repository</span>
+      <span class="no">githubAppID: 1</span>
+      <span class="no">githubAppInstallationID: 2</span>
+      <span class="no">githubAppEnterpriseBaseUrl: https://ghe.example.com/api/v3</span>
+      <span class="no">githubAppPrivateKeySecret:</span>
+        <span class="no">name: my-secret</span>
+        <span class="no">key: githubAppPrivateKey</span>
+</code></pre></div>
+
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The Kubernetes documentation has <a href="https://kubernetes.io/docs/concepts/configuration/secret/#use-case-pod-with-ssh-keys">instructions for creating a secret containing a private key</a>.</p>
@@ -2053,6 +2106,19 @@ definition as a Kubernetes manifest.</li>
       <span class="no">sshPrivateKeySecret:</span>
         <span class="no">name: my-secret</span>
         <span class="no">key: sshPrivateKey</span>
+    <span class="no">- url: https://github.com/argoproj</span>
+      <span class="no">githubAppID: 1</span>
+      <span class="no">githubAppInstallationID: 2</span>
+      <span class="no">githubAppPrivateKeySecret:</span>
+        <span class="no">name: my-secret</span>
+        <span class="no">key: githubAppPrivateKey</span>
+    <span class="no">- url: https://ghe.example.com/argoproj</span>
+      <span class="no">githubAppID: 1</span>
+      <span class="no">githubAppInstallationID: 2</span>
+      <span class="no">githubAppEnterpriseBaseUrl: https://ghe.example.com/api/v3</span>
+      <span class="no">githubAppPrivateKeySecret:</span>
+        <span class="no">name: my-secret</span>
+        <span class="no">key: githubAppPrivateKey</span>
 </code></pre></div>
 
 <p>Argo CD will only use the credentials if you omit <code>usernameSecret</code>, <code>passwordSecret</code>, and <code>sshPrivateKeySecret</code> fields (<code>insecureIgnoreHostKey</code> is ignored) or if your repository is not listed in <code>repositories</code>.</p>
@@ -2155,6 +2221,14 @@ definition as a Kubernetes manifest.</li>
 <ul>
 <li><code>usernameSecret</code> and <code>passwordSecret</code> refer to secrets where username and/or password are stored for accessing the repositories</li>
 <li><code>tlsClientCertData</code> and <code>tlsClientCertKey</code> refer to secrets where a TLS client certificate (<code>tlsClientCertData</code>) and the corresponding private key <code>tlsClientCertKey</code> are stored for accessing the repositories</li>
+</ul>
+<h4 id="github-app-repositories">GitHub App repositories<a class="headerlink" href="#github-app-repositories" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>githubAppPrivateKeySecret</code> refers to the secret where the GitHub App private key is stored for accessing the repositories</li>
+<li><code>githubAppID</code> refers to the GitHub Application ID for the application you created.</li>
+<li><code>githubAppInstallationID</code> refers to the Installation ID of the GitHub app you created and installed.</li>
+<li><code>githubAppEnterpriseBaseUrl</code> refers to the base api URL for GitHub Enterprise (e.g. <code>https://ghe.example.com/api/v3</code>)</li>
+<li><code>tlsClientCertData</code> and <code>tlsClientCertKey</code> refer to secrets where a TLS client certificate (<code>tlsClientCertData</code>) and the corresponding private key <code>tlsClientCertKey</code> are stored for accessing GitHub Enterprise if custom certificates are used.</li>
 </ul>
 <h3 id="repositories-using-self-signed-tls-certificates-or-are-signed-by-custom-ca">Repositories using self-signed TLS certificates (or are signed by custom CA)<a class="headerlink" href="#repositories-using-self-signed-tls-certificates-or-are-signed-by-custom-ca" title="Permanent link">&para;</a></h3>
 <blockquote>
@@ -2448,40 +2522,38 @@ stored at <a href="https://github.com/argoproj/argoproj-deployments/tree/master/
         
 <footer class="md-footer">
   
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
-        
-          <a href="../architecture/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../architecture/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Architectural Overview
             </div>
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Architectural Overview
-              </div>
+          </div>
+        </a>
+      
+      
+        <a href="../ingress/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Ingress Configuration
             </div>
-          </a>
-        
-        
-          <a href="../ingress/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Ingress Configuration
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -2498,19 +2570,13 @@ stored at <a href="https://github.com/argoproj/argoproj-deployments/tree/master/
 </footer>
       
     </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../assets/javascripts/workers/search.f5903571.min.js", "version": null}</script>
     
-      <script src="../../assets/javascripts/vendor.18f0862e.min.js"></script>
-      <script src="../../assets/javascripts/bundle.994580cf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
-      
-      <script>
-        app = initialize({
-          base: "../..",
-          features: [],
-          search: Object.assign({
-            worker: "../../assets/javascripts/worker/search.9c0e82ba.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+    
+      <script src="../../assets/javascripts/bundle.3981fc68.min.js"></script>
       
         <script src="../../assets/versions.js"></script>
       
