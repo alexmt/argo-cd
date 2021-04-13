@@ -1,5 +1,5 @@
 checkoutLocation: go/src/github.com/argoproj/argo-cd
-workspaceLocation: "."
+workspaceLocation: go/src/github.com/argoproj/argo-cd
 image:
   file: .gitpod.Dockerfile
 

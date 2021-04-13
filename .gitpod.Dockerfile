@@ -10,7 +10,8 @@ RUN curl -L https://go.kubebuilder.io/dl/2.3.1/$(go env GOOS)/$(go env GOARCH) |
 
 RUN apt-get install redis-server -y
 RUN go get github.com/mattn/goreman
-RUN ./hack/installers/install-codegen-tools.sh 
+ADD ./hack /tmp/hack
+RUN /tmp/hack/installers/install-codegen-tools.sh
 
 USER gitpod
 
