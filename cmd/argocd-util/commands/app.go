@@ -20,10 +20,12 @@ import (
 	kubecache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/argoproj/argo-cd/v2/cmd/argocd/commands"
 	cmdutil "github.com/argoproj/argo-cd/v2/cmd/util"
 	"github.com/argoproj/argo-cd/v2/controller"
 	"github.com/argoproj/argo-cd/v2/controller/cache"
 	"github.com/argoproj/argo-cd/v2/controller/metrics"
+	argocdclient "github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	appclientset "github.com/argoproj/argo-cd/v2/pkg/client/clientset/versioned"
 	appinformers "github.com/argoproj/argo-cd/v2/pkg/client/informers/externalversions"
@@ -50,6 +52,9 @@ func NewAppCommand() *cobra.Command {
 	command.AddCommand(NewGenAppSpecCommand())
 	command.AddCommand(NewReconcileCommand())
 	command.AddCommand(NewDiffReconcileResults())
+	command.AddCommand(initCommand(func(clientOpts *argocdclient.ClientOptions) *cobra.Command {
+		return commands.NewApplicationListCommand(clientOpts)
+	}))
 	return command
 }
 
