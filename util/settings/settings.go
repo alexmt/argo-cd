@@ -386,7 +386,7 @@ func (mgr *SettingsManager) updateSecret(callback func(*apiv1.Secret) error) err
 		return err
 	}
 
-	if !createSecret && reflect.DeepEqual(argoCDSecret, updatedSecret) {
+	if !createSecret && reflect.DeepEqual(argoCDSecret.Data, updatedSecret.Data) {
 		return nil
 	}
 
@@ -419,9 +419,13 @@ func (mgr *SettingsManager) updateConfigMap(callback func(*apiv1.ConfigMap) erro
 	if argoCDCM.Data == nil {
 		argoCDCM.Data = make(map[string]string)
 	}
+	beforeUpdate := argoCDCM.DeepCopy()
 	err = callback(argoCDCM)
 	if err != nil {
 		return err
+	}
+	if reflect.DeepEqual(beforeUpdate.Data, argoCDCM.Data) {
+		return nil
 	}
 
 	if createCM {
@@ -1161,7 +1165,7 @@ func (mgr *SettingsManager) SaveSettings(settings *ArgoCDSettings) error {
 		return err
 	}
 
-	err = mgr.updateSecret(func(argoCDSecret *apiv1.Secret) error {
+	return mgr.updateSecret(func(argoCDSecret *apiv1.Secret) error {
 		argoCDSecret.Data[settingServerSignatureKey] = settings.ServerSignature
 		if settings.WebhookGitHubSecret != "" {
 			argoCDSecret.Data[settingsWebhookGitHubSecretKey] = []byte(settings.WebhookGitHubSecret)
@@ -1190,12 +1194,6 @@ func (mgr *SettingsManager) SaveSettings(settings *ArgoCDSettings) error {
 		}
 		return nil
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return mgr.ResyncInformers()
 }
 
 // Save the SSH known host data into the corresponding ConfigMap
