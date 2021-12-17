@@ -2,7 +2,9 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"sort"
@@ -153,11 +155,11 @@ func getControllerReplicas(kubeClient *kubernetes.Clientset, namespace string) (
 
 func NewClusterShardsCommand() *cobra.Command {
 	var (
-		shard            int
 		replicas         int
 		clientConfig     clientcmd.ClientConfig
 		cacheSrc         func() (*appstatecache.Cache, error)
 		portForwardRedis bool
+		balance          bool
 	)
 	var command = cobra.Command{
 		Use:   "shards",
@@ -180,8 +182,11 @@ func NewClusterShardsCommand() *cobra.Command {
 				return
 			}
 
-			clusters, err := loadClusters(kubeClient, appClient, replicas, namespace, portForwardRedis, cacheSrc, shard)
+			clusters, err := loadClusters(kubeClient, appClient, replicas, namespace, portForwardRedis, cacheSrc, -1)
 			errors.CheckError(err)
+			data, err := json.Marshal(clusters)
+			errors.CheckError(err)
+			ioutil.WriteFile("/tmp/clusters.json", data, 0777)
 			if len(clusters) == 0 {
 				return
 			}
@@ -190,9 +195,9 @@ func NewClusterShardsCommand() *cobra.Command {
 		},
 	}
 	clientConfig = cli.AddKubectlFlagsToCmd(&command)
-	command.Flags().IntVar(&shard, "shard", -1, "Cluster shard filter")
 	command.Flags().IntVar(&replicas, "replicas", 0, "Application controller replicas count. Inferred from number of running controller pods if not specified")
 	command.Flags().BoolVar(&portForwardRedis, "port-forward-redis", true, "Automatically port-forward ha proxy redis from current namespace?")
+	command.Flags().BoolVar(&balance, "balance", true, "Balance clusters between shards to ensure best load distribution.")
 	cacheSrc = appstatecache.AddCacheFlagsToCmd(&command)
 	return &command
 }
