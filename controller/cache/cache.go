@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/argoproj/argo-cd/v2/controller/metrics"
@@ -278,6 +279,10 @@ func skipAppRequeuing(key kube.ResourceKey) bool {
 	return ignoredRefreshResources[key.Group+"/"+key.Kind]
 }
 
+func (c *liveStateCache) addMetricsWrapper(server string, conf *rest.Config) *rest.Config {
+	return metrics.AddMetricsClusterTransportWrapper(server, c.metricsServer, conf)
+}
+
 func (c *liveStateCache) getCluster(server string) (clustercache.ClusterCache, error) {
 	c.lock.RLock()
 	clusterCache, ok := c.clusters[server]
@@ -332,7 +337,7 @@ func (c *liveStateCache) getCluster(server string) (clustercache.ClusterCache, e
 		clustercache.SetLogr(logutils.NewLogrusLogger(log.WithField("server", cluster.Server))),
 	}
 
-	clusterCache = clustercache.NewClusterCache(cluster.RESTConfig(), clusterCacheOpts...)
+	clusterCache = clustercache.NewClusterCache(c.addMetricsWrapper(cluster.Server, cluster.RESTConfig()), clusterCacheOpts...)
 
 	_ = clusterCache.OnResourceUpdated(func(newRes *clustercache.Resource, oldRes *clustercache.Resource, namespaceResources map[kube.ResourceKey]*clustercache.Resource) {
 		toNotify := make(map[string]bool)
@@ -566,7 +571,7 @@ func (c *liveStateCache) handleModEvent(oldCluster *appv1.Cluster, newCluster *a
 
 		var updateSettings []clustercache.UpdateSettingsFunc
 		if !reflect.DeepEqual(oldCluster.Config, newCluster.Config) {
-			updateSettings = append(updateSettings, clustercache.SetConfig(newCluster.RESTConfig()))
+			updateSettings = append(updateSettings, clustercache.SetConfig(c.addMetricsWrapper(newCluster.Server, newCluster.RESTConfig())))
 		}
 		if !reflect.DeepEqual(oldCluster.Namespaces, newCluster.Namespaces) {
 			updateSettings = append(updateSettings, clustercache.SetNamespaces(newCluster.Namespaces))

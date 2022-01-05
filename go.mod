@@ -130,3 +130,5 @@ replace (
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.22.2
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.2
 )
+
+replace github.com/argoproj/pkg => github.com/alexmt/pkg v0.0.0-20220105010245-ca22012f0e02

@@ -30,6 +30,7 @@ type MetricsServer struct {
 	kubectlExecCounter      *prometheus.CounterVec
 	kubectlExecPendingGauge *prometheus.GaugeVec
 	k8sRequestCounter       *prometheus.CounterVec
+	k8sResponseSize         *prometheus.HistogramVec
 	clusterEventsCounter    *prometheus.CounterVec
 	redisRequestCounter     *prometheus.CounterVec
 	reconcileHistogram      *prometheus.HistogramVec
@@ -95,6 +96,17 @@ var (
 			Help: "Number of kubernetes requests executed during application reconciliation.",
 		},
 		append(descAppDefaultLabels, "server", "response_code", "verb", "resource_kind", "resource_namespace"),
+	)
+
+	kb              = float64(1024)
+	mb              = float64(1024 * kb)
+	k8sResponseSize = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "argocd_k8s_response_size_bytes",
+			Help:    "Kubernetes response size in bytes.",
+			Buckets: []float64{128, 512, 1 * kb, 128 * kb, 512 * kb, 1 * mb, 2 * mb, 4 * mb, 8 * mb, 16 * mb, 32 * mb},
+		},
+		[]string{"server", "verb", "resource_kind"},
 	)
 
 	kubectlExecCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -170,6 +182,7 @@ func NewMetricsServer(addr string, appLister applister.ApplicationLister, appFil
 
 	registry.MustRegister(syncCounter)
 	registry.MustRegister(k8sRequestCounter)
+	registry.MustRegister(k8sResponseSize)
 	registry.MustRegister(kubectlExecCounter)
 	registry.MustRegister(kubectlExecPendingGauge)
 	registry.MustRegister(reconcileHistogram)
@@ -185,6 +198,7 @@ func NewMetricsServer(addr string, appLister applister.ApplicationLister, appFil
 		},
 		syncCounter:             syncCounter,
 		k8sRequestCounter:       k8sRequestCounter,
+		k8sResponseSize:         k8sResponseSize,
 		kubectlExecCounter:      kubectlExecCounter,
 		kubectlExecPendingGauge: kubectlExecPendingGauge,
 		reconcileHistogram:      reconcileHistogram,
@@ -255,6 +269,11 @@ func (m *MetricsServer) IncKubernetesRequest(app *argoappv1.Application, server,
 	).Inc()
 }
 
+// ObserveKubernetesResponseSize observes kubernetes response size
+func (m *MetricsServer) ObserveKubernetesResponseSize(server string, sizeBytes int64, verb string, resourceKind string) {
+	m.k8sResponseSize.WithLabelValues(server, verb, resourceKind).Observe(float64(sizeBytes))
+}
+
 func (m *MetricsServer) IncRedisRequest(failed bool) {
 	m.redisRequestCounter.WithLabelValues(m.hostname, "argocd-application-controller", strconv.FormatBool(failed)).Inc()
 }
@@ -286,6 +305,7 @@ func (m *MetricsServer) SetExpiration(cacheExpiration time.Duration) error {
 		m.kubectlExecCounter.Reset()
 		m.kubectlExecPendingGauge.Reset()
 		m.k8sRequestCounter.Reset()
+		m.k8sResponseSize.Reset()
 		m.clusterEventsCounter.Reset()
 		m.redisRequestCounter.Reset()
 		m.reconcileHistogram.Reset()
