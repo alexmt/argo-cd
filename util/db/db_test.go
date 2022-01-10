@@ -693,3 +693,27 @@ func TestHelmRepositorySecretsTrim(t *testing.T) {
 		assert.Equal(t, tt.expectedSecret, tt.retrievedSecret)
 	}
 }
+
+func TestGetClusterServersByName(t *testing.T) {
+	clientset := getClientset(nil, &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-cluster-secret",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				common.LabelKeySecretType: common.LabelValueSecretTypeCluster,
+			},
+			Annotations: map[string]string{
+				common.AnnotationKeyManagedBy: common.AnnotationValueManagedByArgoCD,
+			},
+		},
+		Data: map[string][]byte{
+			"name":   []byte("my-cluster-name"),
+			"server": []byte("https://my-cluster-server"),
+			"config": []byte("{}"),
+		},
+	})
+	db := NewDB(testNamespace, settings.NewSettingsManager(context.Background(), clientset, testNamespace), clientset)
+	servers, err := db.GetClusterServersByName(context.Background(), "my-cluster-name")
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{"https://my-cluster-server"}, servers)
+}
