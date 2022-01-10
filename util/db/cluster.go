@@ -237,6 +237,17 @@ func (db *db) GetClusterServersByName(ctx context.Context, name string) ([]strin
 	if err != nil {
 		return nil, err
 	}
+
+	// if local cluster name is not overridden and specified name is local cluster name, return local cluster server
+	localClusterSecrets, err := informer.GetIndexer().ByIndex(settings.ByClusterURLIndexer, appv1.KubernetesInternalAPIServerAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(localClusterSecrets) == 0 && name == db.getLocalCluster().Name {
+		return []string{appv1.KubernetesInternalAPIServerAddr}, nil
+	}
+
 	secrets, err := informer.GetIndexer().ByIndex(settings.ByClusterNameIndexer, name)
 	if err != nil {
 		return nil, err
