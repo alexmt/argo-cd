@@ -24,6 +24,7 @@ import (
 	"github.com/argoproj/pkg/sync"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-jsonnet"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
@@ -47,6 +48,7 @@ import (
 	"github.com/argoproj/argo-cd/v2/util/git"
 	"github.com/argoproj/argo-cd/v2/util/glob"
 	"github.com/argoproj/argo-cd/v2/util/gpg"
+	"github.com/argoproj/argo-cd/v2/util/grpc"
 	"github.com/argoproj/argo-cd/v2/util/helm"
 	"github.com/argoproj/argo-cd/v2/util/io"
 	"github.com/argoproj/argo-cd/v2/util/ksonnet"
@@ -69,6 +71,7 @@ var allowedHelmRemoteProtocols = []string{"http", "https"}
 
 // Service implements ManifestService interface
 type Service struct {
+	rootDir                   string
 	gitRepoPaths              *io.TempPaths
 	chartPaths                *io.TempPaths
 	gitRepoInitializer        func(rootPath string) goio.Closer
@@ -92,7 +95,7 @@ type RepoServerInitConstants struct {
 }
 
 // NewService returns a new instance of the Manifest service
-func NewService(metricsServer *metrics.MetricsServer, cache *reposervercache.Cache, initConstants RepoServerInitConstants, resourceTracking argo.ResourceTracking) *Service {
+func NewService(metricsServer *metrics.MetricsServer, cache *reposervercache.Cache, initConstants RepoServerInitConstants, resourceTracking argo.ResourceTracking, rootDir string) *Service {
 	var parallelismLimitSemaphore *semaphore.Weighted
 	if initConstants.ParallelismLimit > 0 {
 		parallelismLimitSemaphore = semaphore.NewWeighted(initConstants.ParallelismLimit)
@@ -110,15 +113,37 @@ func NewService(metricsServer *metrics.MetricsServer, cache *reposervercache.Cac
 		},
 		initConstants:      initConstants,
 		now:                time.Now,
-		gitRepoPaths:       io.NewTempPaths(),
-		chartPaths:         io.NewTempPaths(),
+		gitRepoPaths:       io.NewTempPaths(rootDir),
+		chartPaths:         io.NewTempPaths(rootDir),
 		gitRepoInitializer: directoryPermissionInitializer,
+		rootDir:            rootDir,
 	}
+}
+
+func (s *Service) Init() error {
+	files, err := ioutil.ReadDir(s.rootDir)
+	if err != nil && !os.IsNotExist(err) {
+		log.Warnf("Failed to restore cloned repositories paths: %v", err)
+	}
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+		fullPath := filepath.Join(s.rootDir, file.Name())
+		closer := s.gitRepoInitializer(fullPath)
+		if repo, err := gogit.PlainOpen(fullPath); err == nil {
+			if remotes, err := repo.Remotes(); err == nil && len(remotes) > 0 && len(remotes[0].Config().URLs) > 0 {
+				s.gitRepoPaths.Add(git.NormalizeGitURL(remotes[0].Config().URLs[0]), fullPath)
+			}
+		}
+		io.Close(closer)
+	}
+	return nil
 }
 
 // List a subset of the refs (currently, branches and tags) of a git repo
 func (s *Service) ListRefs(ctx context.Context, q *apiclient.ListRefsRequest) (*apiclient.Refs, error) {
-	gitClient, err := s.newClient(q.Repo)
+	gitClient, err := s.newClient(ctx, q.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +166,7 @@ func (s *Service) ListRefs(ctx context.Context, q *apiclient.ListRefsRequest) (*
 
 // ListApps lists the contents of a GitHub repo
 func (s *Service) ListApps(ctx context.Context, q *apiclient.ListAppsRequest) (*apiclient.AppList, error) {
-	gitClient, commitSHA, err := s.newClientResolveRevision(q.Repo, q.Revision)
+	gitClient, commitSHA, err := s.newClientResolveRevision(ctx, q.Repo, q.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +247,7 @@ func (s *Service) runRepoOperation(
 			return err
 		}
 	} else {
-		gitClient, revision, err = s.newClientResolveRevision(repo, revision, git.WithCache(s.cache, !settings.noRevisionCache && !settings.noCache))
+		gitClient, revision, err = s.newClientResolveRevision(ctx, repo, revision, git.WithCache(s.cache, !settings.noRevisionCache && !settings.noCache))
 		if err != nil {
 			return err
 		}
@@ -1611,7 +1636,7 @@ func (s *Service) GetRevisionMetadata(ctx context.Context, q *apiclient.RepoServ
 		}
 	}
 
-	gitClient, _, err := s.newClientResolveRevision(q.Repo, q.Revision)
+	gitClient, _, err := s.newClientResolveRevision(ctx, q.Repo, q.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -1667,10 +1692,14 @@ func fileParameters(q *apiclient.RepoServerAppDetailsQuery) []v1alpha1.HelmFileP
 	return q.Source.Helm.FileParameters
 }
 
-func (s *Service) newClient(repo *v1alpha1.Repository, opts ...git.ClientOpts) (git.Client, error) {
+func (s *Service) newClient(ctx context.Context, repo *v1alpha1.Repository, opts ...git.ClientOpts) (git.Client, error) {
 	repoPath, err := s.gitRepoPaths.GetPath(git.NormalizeGitURL(repo.Repo))
 	if err != nil {
 		return nil, err
+	}
+	if sanitizer, ok := grpc.SanitizerFromContext(ctx); ok {
+		// make sure randomized path replaced with '.' in the error message
+		sanitizer.AddReplacement(repoPath, ".")
 	}
 	opts = append(opts, git.WithEventHandlers(metrics.NewGitClientEventHandlers(s.metricsServer)))
 	return s.newGitClient(repo.Repo, repoPath, repo.GetGitCreds(), repo.IsInsecure(), repo.EnableLFS, repo.Proxy, opts...)
@@ -1678,8 +1707,8 @@ func (s *Service) newClient(repo *v1alpha1.Repository, opts ...git.ClientOpts) (
 
 // newClientResolveRevision is a helper to perform the common task of instantiating a git client
 // and resolving a revision to a commit SHA
-func (s *Service) newClientResolveRevision(repo *v1alpha1.Repository, revision string, opts ...git.ClientOpts) (git.Client, string, error) {
-	gitClient, err := s.newClient(repo, opts...)
+func (s *Service) newClientResolveRevision(ctx context.Context, repo *v1alpha1.Repository, revision string, opts ...git.ClientOpts) (git.Client, string, error) {
+	gitClient, err := s.newClient(ctx, repo, opts...)
 	if err != nil {
 		return nil, "", err
 	}
