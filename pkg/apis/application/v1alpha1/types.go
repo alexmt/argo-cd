@@ -2088,6 +2088,11 @@ type ConfigManagementPlugin struct {
 	LockRepo bool     `json:"lockRepo,omitempty" protobuf:"bytes,4,name=lockRepo"`
 }
 
+// HelmOptions holds helm options
+type HelmOptions struct {
+	ValuesFileSchemas []string `protobuf:"bytes,1,opt,name=valuesFileSchemas"`
+}
+
 // KustomizeOptions are options for kustomize to use when building manifests
 type KustomizeOptions struct {
 	// BuildOptions is a string of build parameters to use when calling `kustomize build`

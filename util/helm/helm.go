@@ -51,6 +51,7 @@ type helm struct {
 	cmd             Cmd
 	repos           []HelmRepository
 	passCredentials bool
+	schemas         map[string]bool
 }
 
 var _ Helm = &helm{}
@@ -138,7 +139,7 @@ func (h *helm) GetParameters(valuesFiles []string) (map[string]string, error) {
 	for _, file := range valuesFiles {
 		var fileValues []byte
 		parsedURL, err := url.ParseRequestURI(file)
-		if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
+		if err == nil && h.schemas[parsedURL.Scheme] {
 			fileValues, err = config.ReadRemoteFile(file)
 		} else {
 			filePath := path.Join(h.cmd.WorkDir, file)

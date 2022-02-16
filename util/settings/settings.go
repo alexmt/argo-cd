@@ -396,6 +396,8 @@ const (
 	settingsPasswordPatternKey = "passwordPattern"
 	// inClusterEnabledKey is the key to configure whether to allow in-cluster server address
 	inClusterEnabledKey = "cluster.inClusterEnabled"
+	// helmValuesFileSchemasKey is the key to configure the list of supported helm values file schemas
+	helmValuesFileSchemasKey = "helm.valuesFileSchemas"
 )
 
 // SettingsManager holds config info for a new manager with which to access Kubernetes ConfigMaps.
@@ -821,6 +823,23 @@ func (mgr *SettingsManager) GetResourceCompareOptions() (ArgoCDDiffOptions, erro
 	}
 
 	return diffOptions, nil
+}
+
+// GetHelmSettings returns helm settings
+func (mgr *SettingsManager) GetHelmSettings() (*v1alpha1.HelmOptions, error) {
+	argoCDCM, err := mgr.getConfigMap()
+	if err != nil {
+		return nil, err
+	}
+	helmOptions := &v1alpha1.HelmOptions{}
+	if value, ok := argoCDCM.Data[helmValuesFileSchemasKey]; ok && value != "" {
+		for _, item := range strings.Split(value, ",") {
+			if item := strings.TrimSpace(item); item != "" {
+				helmOptions.ValuesFileSchemas = append(helmOptions.ValuesFileSchemas, item)
+			}
+		}
+	}
+	return helmOptions, nil
 }
 
 // GetKustomizeSettings loads the kustomize settings from argocd-cm ConfigMap
