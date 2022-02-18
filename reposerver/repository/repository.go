@@ -16,9 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-jsonnet"
-
-	"github.com/argoproj/argo-cd/v2/util/argo"
+	"github.com/google/uuid"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/TomOnTime/utfutil"
@@ -27,6 +25,7 @@ import (
 	"github.com/argoproj/pkg/sync"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/ghodss/yaml"
+	"github.com/google/go-jsonnet"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
@@ -44,12 +43,14 @@ import (
 	"github.com/argoproj/argo-cd/v2/reposerver/metrics"
 	"github.com/argoproj/argo-cd/v2/util/app/discovery"
 	argopath "github.com/argoproj/argo-cd/v2/util/app/path"
+	"github.com/argoproj/argo-cd/v2/util/argo"
 	executil "github.com/argoproj/argo-cd/v2/util/exec"
 	"github.com/argoproj/argo-cd/v2/util/git"
 	"github.com/argoproj/argo-cd/v2/util/glob"
 	"github.com/argoproj/argo-cd/v2/util/gpg"
 	"github.com/argoproj/argo-cd/v2/util/helm"
 	"github.com/argoproj/argo-cd/v2/util/io"
+	pathutil "github.com/argoproj/argo-cd/v2/util/io/path"
 	"github.com/argoproj/argo-cd/v2/util/ksonnet"
 	"github.com/argoproj/argo-cd/v2/util/kustomize"
 	"github.com/argoproj/argo-cd/v2/util/text"
@@ -568,7 +569,7 @@ func helmTemplate(appPath string, repoRoot string, env *v1alpha1.Env, q *apiclie
 		APIVersions: q.ApiVersions,
 		Set:         map[string]string{},
 		SetString:   map[string]string{},
-		SetFile:     map[string]helm.ResolvedFilePath{},
+		SetFile:     map[string]pathutil.ResolvedFilePath{},
 	}
 
 	appHelm := q.ApplicationSource.Helm
@@ -585,7 +586,7 @@ func helmTemplate(appPath string, repoRoot string, env *v1alpha1.Env, q *apiclie
 		for _, val := range appHelm.ValueFiles {
 
 			// This will resolve val to an absolute path (or an URL)
-			path, isRemote, err := helm.ResolveFilePath(appPath, repoRoot, val, q.GetValuesFileSchemes())
+			path, isRemote, err := pathutil.ResolveFilePath(appPath, repoRoot, val, q.GetValuesFileSchemes())
 			if err != nil {
 				return nil, err
 			}
@@ -604,18 +605,17 @@ func helmTemplate(appPath string, repoRoot string, env *v1alpha1.Env, q *apiclie
 		}
 
 		if appHelm.Values != "" {
-			file, err := ioutil.TempFile("", "values-*.yaml")
+			rand, err := uuid.NewRandom()
 			if err != nil {
 				return nil, err
 			}
-			p := file.Name()
+			p := path.Join(os.TempDir(), rand.String())
 			defer func() { _ = os.RemoveAll(p) }()
 			err = ioutil.WriteFile(p, []byte(appHelm.Values), 0644)
 			if err != nil {
 				return nil, err
 			}
-			defer file.Close()
-			templateOpts.Values = append(templateOpts.Values, helm.ResolvedFilePath(p))
+			templateOpts.Values = append(templateOpts.Values, pathutil.ResolvedFilePath(p))
 		}
 
 		for _, p := range appHelm.Parameters {
@@ -626,7 +626,7 @@ func helmTemplate(appPath string, repoRoot string, env *v1alpha1.Env, q *apiclie
 			}
 		}
 		for _, p := range appHelm.FileParameters {
-			resolvedPath, _, err := helm.ResolveFilePath(appPath, repoRoot, env.Envsubst(p.Path), q.GetValuesFileSchemes())
+			resolvedPath, _, err := pathutil.ResolveFilePath(appPath, repoRoot, env.Envsubst(p.Path), q.GetValuesFileSchemes())
 			if err != nil {
 				return nil, err
 			}
@@ -1083,11 +1083,11 @@ func makeJsonnetVm(appPath string, repoRoot string, sourceJsonnet v1alpha1.Appli
 	// Jsonnet Imports relative to the repository path
 	jpaths := []string{appPath}
 	for _, p := range sourceJsonnet.Libs {
-		jpath := path.Join(repoRoot, p)
-		if !strings.HasPrefix(jpath, repoRoot) {
-			return nil, status.Errorf(codes.FailedPrecondition, "%s: referenced library points outside the repository", p)
+		jpath, _, err := pathutil.ResolveFilePath(appPath, repoRoot, p, nil)
+		if err != nil {
+			return nil, err
 		}
-		jpaths = append(jpaths, jpath)
+		jpaths = append(jpaths, string(jpath))
 	}
 
 	vm.Importer(&jsonnet.FileImporter{
@@ -1361,10 +1361,10 @@ func populateHelmAppDetails(res *apiclient.RepoAppDetailsResponse, appPath strin
 	if err := loadFileIntoIfExists(filepath.Join(appPath, "values.yaml"), &res.Helm.Values); err != nil {
 		return err
 	}
-	var resolvedSelectedValueFiles []helm.ResolvedFilePath
+	var resolvedSelectedValueFiles []pathutil.ResolvedFilePath
 	// drop not allowed values files
 	for _, file := range selectedValueFiles {
-		if resolvedFile, _, err := helm.ResolveFilePath(appPath, repoRoot, file, q.GetValuesFileSchemes()); err == nil {
+		if resolvedFile, _, err := pathutil.ResolveFilePath(appPath, repoRoot, file, q.GetValuesFileSchemes()); err == nil {
 			resolvedSelectedValueFiles = append(resolvedSelectedValueFiles, resolvedFile)
 		} else {
 			log.Debugf("Values file %s is not allowed: %v", file, err)
