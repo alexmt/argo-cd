@@ -396,6 +396,7 @@ func (ctrl *ApplicationController) getResourceTree(a *appv1.Application, managed
 		warnOrphaned = proj.Spec.OrphanedResources.IsWarn()
 	}
 
+	var liveKeys []kube.ResourceKey
 	for i := range managedResources {
 		managedResource := managedResources[i]
 		delete(orphanedNodesMap, kube.NewResourceKey(managedResource.Group, managedResource.Kind, managedResource.Namespace, managedResource.Name))
@@ -421,32 +422,35 @@ func (ctrl *ApplicationController) getResourceTree(a *appv1.Application, managed
 				},
 			})
 		} else {
-			err := ctrl.stateCache.IterateHierarchy(a.Spec.Destination.Server, kube.GetResourceKey(live), func(child appv1.ResourceNode, appName string) {
-				nodes = append(nodes, child)
-			})
-			if err != nil {
-				return nil, err
-			}
+			liveKeys = append(liveKeys, kube.GetResourceKey(live))
+		}
+	}
+	err = ctrl.stateCache.IterateHierarchy(a.Spec.Destination.Server, liveKeys, func(child appv1.ResourceNode, appName string) {
+		nodes = append(nodes, child)
+	})
+	if err != nil {
+		return nil, err
+	}
+	var orphanedKeys []kube.ResourceKey
+	for k := range orphanedNodesMap {
+		if k.Namespace != "" && proj.IsGroupKindPermitted(k.GroupKind(), true) && !isKnownOrphanedResourceExclusion(k, proj) {
+			orphanedKeys = append(orphanedKeys, k)
 		}
 	}
 	orphanedNodes := make([]appv1.ResourceNode, 0)
-	for k := range orphanedNodesMap {
-		if k.Namespace != "" && proj.IsGroupKindPermitted(k.GroupKind(), true) && !isKnownOrphanedResourceExclusion(k, proj) {
-			err := ctrl.stateCache.IterateHierarchy(a.Spec.Destination.Server, k, func(child appv1.ResourceNode, appName string) {
-				belongToAnotherApp := false
-				if appName != "" {
-					if _, exists, err := ctrl.appInformer.GetIndexer().GetByKey(ctrl.namespace + "/" + appName); exists && err == nil {
-						belongToAnotherApp = true
-					}
-				}
-				if !belongToAnotherApp {
-					orphanedNodes = append(orphanedNodes, child)
-				}
-			})
-			if err != nil {
-				return nil, err
+	err = ctrl.stateCache.IterateHierarchy(a.Spec.Destination.Server, orphanedKeys, func(child appv1.ResourceNode, appName string) {
+		belongToAnotherApp := false
+		if appName != "" {
+			if _, exists, err := ctrl.appInformer.GetIndexer().GetByKey(ctrl.namespace + "/" + appName); exists && err == nil {
+				belongToAnotherApp = true
 			}
 		}
+		if !belongToAnotherApp {
+			orphanedNodes = append(orphanedNodes, child)
+		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	var conditions []appv1.ApplicationCondition
 	if len(orphanedNodes) > 0 && warnOrphaned {
