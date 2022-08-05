@@ -18,8 +18,8 @@ func NewServer(apiFactory api.Factory) notification.NotificationServiceServer {
 	return s
 }
 
-// List returns list of applications
-func (s *Server) List(ctx context.Context, q *notification.TriggerListRequest) (*notification.Triggers, error) {
+// List returns list of notification triggers
+func (s *Server) ListTriggers(ctx context.Context, q *notification.TriggersListRequest) (*notification.Triggers, error) {
 	api, err := s.apiFactory.GetAPI()
 	if err != nil {
 		return nil, err
@@ -29,4 +29,30 @@ func (s *Server) List(ctx context.Context, q *notification.TriggerListRequest) (
 		triggers = append(triggers, trigger)
 	}
 	return &notification.Triggers{Triggers: triggers}, nil
+}
+
+// List returns list of notification services
+func (s *Server) ListServices(ctx context.Context, q *notification.ServicesListRequest) (*notification.Services, error) {
+	api, err := s.apiFactory.GetAPI()
+	if err != nil {
+		return nil, err
+	}
+	services := []string{}
+	for svc := range api.GetConfig().Services {
+		services = append(services, svc)
+	}
+	return &notification.Services{Services: services}, nil
+}
+
+// List returns list of notification templates
+func (s *Server) ListTemplates(ctx context.Context, q *notification.TemplatesListRequest) (*notification.Templates, error) {
+	api, err := s.apiFactory.GetAPI()
+	if err != nil {
+		return nil, err
+	}
+	templates := []string{}
+	for tmpl := range api.GetConfig().Templates {
+		templates = append(templates, tmpl)
+	}
+	return &notification.Templates{Templates: templates}, nil
 }

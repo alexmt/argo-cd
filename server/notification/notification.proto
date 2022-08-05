@@ -12,13 +12,35 @@ message Triggers {
 	repeated string triggers = 1;
 }
 
-message TriggerListRequest {}
+message TriggersListRequest {}
+
+message Services {
+	repeated string services = 1;
+}
+
+message ServicesListRequest {}
+
+message Templates {
+	repeated string templates = 1;
+}
+
+message TemplatesListRequest {}
 
 // NotificationService
 service NotificationService {
 
 	// List returns list of triggers
-	rpc List(TriggerListRequest) returns (Triggers) {
+	rpc ListTriggers(TriggersListRequest) returns (Triggers) {
 		option (google.api.http).get = "/api/v1/notifications/triggers";
+	}
+
+	// List returns list of services
+	rpc ListServices(ServicesListRequest) returns (Services) {
+		option (google.api.http).get = "/api/v1/notifications/services";
+	}
+
+	// List returns list of templates
+	rpc ListTemplates(TemplatesListRequest) returns (Templates) {
+		option (google.api.http).get = "/api/v1/notifications/templates";
 	}
 }

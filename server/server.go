@@ -209,7 +209,6 @@ type ArgoCDServerOpts struct {
 	XFrameOptions         string
 	ContentSecurityPolicy string
 	ListenHost            string
-	RepoServerAddress     string
 }
 
 // initializeDefaultProject creates the default project if it does not already exist
