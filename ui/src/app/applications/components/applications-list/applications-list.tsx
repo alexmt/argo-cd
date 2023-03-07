@@ -307,7 +307,14 @@ const prefsToQuery = (prefs: AppsListPreferences): AppsQuery => {
         query.namespaces = prefs.namespacesFilter;
     }
     if (prefs.clustersFilter) {
-        query.clusters = prefs.clustersFilter;
+        query.clusters = prefs.clustersFilter.map(item => {
+            const match = item.match('^(.*) [(](http.*)[)]$');
+            if (match?.length === 3) {
+                return match[2];
+            }
+            const urlMatch = item.match('^http.*$');
+            return urlMatch && urlMatch[0];
+        }).filter(item => !!item);
     }
     if (prefs.autoSyncFilter?.length > 0) {
         query.autoSyncEnabled = prefs.autoSyncFilter.findIndex(item => item === 'Enabled') > -1;
