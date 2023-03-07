@@ -29,6 +29,22 @@ message ApplicationQuery {
 	optional string repo = 6;
 	// the application's namespace
 	optional string appNamespace = 7;
+	// the application name to start from (app with min name is included in response)
+	optional string minName = 8;
+	// the application name to end at (app with max name is included in response)
+	optional string maxName = 9;
+	// the repos filter
+	repeated string repos = 12;
+	// the clusters filter
+	repeated string clusters = 13;
+	// the namespaces filter
+	repeated string namespaces = 14;
+	// the auth sync filter
+	optional bool autoSyncEnabled = 15;
+	// the sync status filter
+	repeated string syncStatuses = 16;
+	// the health status filter
+	repeated string healthStatuses = 17;
 }
 
 message NodeQuery {

@@ -14,6 +14,7 @@ import (
 
 	kubecache "github.com/argoproj/gitops-engine/pkg/cache"
 	"github.com/argoproj/gitops-engine/pkg/diff"
+	"github.com/argoproj/gitops-engine/pkg/health"
 	"github.com/argoproj/gitops-engine/pkg/sync/common"
 	"github.com/argoproj/gitops-engine/pkg/utils/kube"
 	"github.com/argoproj/gitops-engine/pkg/utils/text"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -133,20 +135,17 @@ func NewServer(
 
 // List returns list of applications
 func (s *Server) List(ctx context.Context, q *application.ApplicationQuery) (*appv1.ApplicationList, error) {
-	selector, err := labels.Parse(q.GetSelector())
-	if err != nil {
-		return nil, fmt.Errorf("error parsing the selector: %w", err)
-	}
 	var apps []*appv1.Application
+	var err error
 	if q.GetAppNamespace() == "" {
-		apps, err = s.appLister.List(selector)
+		apps, err = s.appLister.List(labels.Everything())
 	} else {
-		apps, err = s.appLister.Applications(q.GetAppNamespace()).List(selector)
+		apps, err = s.appLister.Applications(q.GetAppNamespace()).List(labels.Everything())
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error listing apps with selectors: %w", err)
 	}
-	newItems := make([]appv1.Application, 0)
+	items := make([]appv1.Application, 0)
 	for _, a := range apps {
 		// Skip any application that is neither in the conrol plane's namespace
 		// nor in the list of enabled namespaces.
@@ -154,35 +153,75 @@ func (s *Server) List(ctx context.Context, q *application.ApplicationQuery) (*ap
 			continue
 		}
 		if s.enf.Enforce(ctx.Value("claims"), rbacpolicy.ResourceApplications, rbacpolicy.ActionGet, a.RBACName(s.ns)) {
-			newItems = append(newItems, *a)
+			items = append(items, *a)
 		}
 	}
-
-	if q.Name != nil {
-		newItems, err = argoutil.FilterByName(newItems, *q.Name)
-		if err != nil {
-			return nil, fmt.Errorf("error filtering applications by name: %w", err)
+	filter, err := s.getAppFilter(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("error getting application filter: %w", err)
+	}
+	var filtered []appv1.Application
+	for i := range items {
+		if filter(&items[i]) {
+			filtered = append(filtered, items[i])
 		}
 	}
-
-	// Filter applications by name
-	newItems = argoutil.FilterByProjects(newItems, q.Projects)
-
-	// Filter applications by source repo URL
-	newItems = argoutil.FilterByRepo(newItems, q.GetRepo())
 
 	// Sort found applications by name
-	sort.Slice(newItems, func(i, j int) bool {
-		return newItems[i].Name < newItems[j].Name
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].Name < filtered[j].Name
 	})
 
 	appList := appv1.ApplicationList{
 		ListMeta: metav1.ListMeta{
 			ResourceVersion: s.appInformer.LastSyncResourceVersion(),
 		},
-		Items: newItems,
+		Stats: getAppListStats(items),
+		Items: filtered,
 	}
 	return &appList, nil
+}
+
+func getAppListStats(items []appv1.Application) appv1.ApplicationListStats {
+	stats := appv1.ApplicationListStats{
+		Total:               int64(len(items)),
+		TotalByHealthStatus: map[health.HealthStatusCode]int64{},
+		TotalBySyncStatus:   map[appv1.SyncStatusCode]int64{},
+	}
+	destinations := map[appv1.ApplicationDestination]bool{}
+	namespaces := map[string]bool{}
+	allLabels := map[string]map[string]bool{}
+	for _, a := range items {
+		stats.TotalByHealthStatus[a.Status.Health.Status]++
+		stats.TotalBySyncStatus[a.Status.Sync.Status]++
+		destinations[appv1.ApplicationDestination{Name: a.Spec.Destination.Name, Server: a.Spec.Destination.Server}] = true
+		namespaces[a.Spec.Destination.Namespace] = true
+		if a.Spec.SyncPolicy != nil && a.Spec.SyncPolicy.Automated != nil {
+			stats.AutoSyncEnabledCount++
+		}
+		for k, v := range a.GetLabels() {
+			vals, ok := allLabels[k]
+			if !ok {
+				vals = map[string]bool{}
+				allLabels[k] = vals
+			}
+			vals[v] = true
+		}
+	}
+	for k := range destinations {
+		stats.Destinations = append(stats.Destinations, k)
+	}
+	for k := range namespaces {
+		stats.Namespaces = append(stats.Namespaces, k)
+	}
+	for k, v := range allLabels {
+		var values []string
+		for val := range v {
+			values = append(values, val)
+		}
+		stats.Labels = append(stats.Labels, appv1.ApplicationLabelStats{Key: k, Values: values})
+	}
+	return stats
 }
 
 // Create creates an application
@@ -949,47 +988,16 @@ func (s *Server) Delete(ctx context.Context, q *application.ApplicationDeleteReq
 }
 
 func (s *Server) Watch(q *application.ApplicationQuery, ws application.ApplicationService_WatchServer) error {
-	appName := q.GetName()
-	appNs := s.appNamespaceOrDefault(q.GetAppNamespace())
 	logCtx := log.NewEntry(log.New())
 	if q.Name != nil {
 		logCtx = logCtx.WithField("application", *q.Name)
 	}
-	projects := map[string]bool{}
-	for i := range q.Projects {
-		projects[q.Projects[i]] = true
-	}
-	claims := ws.Context().Value("claims")
-	selector, err := labels.Parse(q.GetSelector())
+	filter, err := s.getAppFilter(ws.Context(), q)
 	if err != nil {
-		return fmt.Errorf("error parsing labels with selectors: %w", err)
-	}
-	minVersion := 0
-	if q.GetResourceVersion() != "" {
-		if minVersion, err = strconv.Atoi(q.GetResourceVersion()); err != nil {
-			minVersion = 0
-		}
+		return fmt.Errorf("error getting application filter: %w", err)
 	}
 
-	// sendIfPermitted is a helper to send the application to the client's streaming channel if the
-	// caller has RBAC privileges permissions to view it
-	sendIfPermitted := func(a appv1.Application, eventType watch.EventType) {
-		if len(projects) > 0 && !projects[a.Spec.GetProject()] {
-			return
-		}
-
-		if appVersion, err := strconv.Atoi(a.ResourceVersion); err == nil && appVersion < minVersion {
-			return
-		}
-		matchedEvent := (appName == "" || (a.Name == appName && a.Namespace == appNs)) && selector.Matches(labels.Set(a.Labels))
-		if !matchedEvent {
-			return
-		}
-
-		if !s.enf.Enforce(claims, rbacpolicy.ResourceApplications, rbacpolicy.ActionGet, a.RBACName(s.ns)) {
-			// do not emit apps user does not have accessing
-			return
-		}
+	sendEvent := func(a appv1.Application, eventType watch.EventType) {
 		s.inferResourcesStatusHealth(&a)
 		err := ws.Send(&appv1.ApplicationWatchEvent{
 			Type:        eventType,
@@ -1001,13 +1009,14 @@ func (s *Server) Watch(q *application.ApplicationQuery, ws application.Applicati
 		}
 	}
 
+	initial := map[string]bool{}
 	events := make(chan *appv1.ApplicationWatchEvent, watchAPIBufferSize)
 	// Mimic watch API behavior: send ADDED events if no resource version provided
 	// If watch API is executed for one application when emit event even if resource version is provided
 	// This is required since single app watch API is used for during operations like app syncing and it is
 	// critical to never miss events.
-	if q.GetResourceVersion() == "" || q.GetName() != "" {
-		apps, err := s.appLister.List(selector)
+	if q.GetName() != "" {
+		apps, err := s.appLister.List(labels.Everything())
 		if err != nil {
 			return fmt.Errorf("error listing apps with selector: %w", err)
 		}
@@ -1015,7 +1024,10 @@ func (s *Server) Watch(q *application.ApplicationQuery, ws application.Applicati
 			return apps[i].QualifiedName() < apps[j].QualifiedName()
 		})
 		for i := range apps {
-			sendIfPermitted(*apps[i], watch.Added)
+			if filter(apps[i]) {
+				initial[apps[i].Name] = true
+				sendEvent(*apps[i], watch.Added)
+			}
 		}
 	}
 	unsubscribe := s.appBroadcaster.Subscribe(events)
@@ -1023,7 +1035,14 @@ func (s *Server) Watch(q *application.ApplicationQuery, ws application.Applicati
 	for {
 		select {
 		case event := <-events:
-			sendIfPermitted(event.Application, event.Type)
+			if filter(&event.Application) {
+				sendEvent(event.Application, event.Type)
+			} else if initial[event.Application.Name] {
+				// If an app was previously sent, but no longer matches the filter, send a DELETED event
+				sendEvent(event.Application, watch.Deleted)
+				delete(initial, event.Application.Name)
+			}
+
 		case <-ws.Context().Done():
 			return nil
 		}
@@ -2249,4 +2268,80 @@ func (s *Server) appNamespaceOrDefault(appNs string) string {
 
 func (s *Server) isNamespaceEnabled(namespace string) bool {
 	return security.IsNamespaceEnabled(namespace, s.ns, s.enabledNamespaces)
+}
+
+func (s *Server) getAppFilter(ctx context.Context, q *application.ApplicationQuery) (func(app *appv1.Application) bool, error) {
+	selector, err := labels.Parse(q.GetSelector())
+	if err != nil {
+		return nil, fmt.Errorf("error parsing the selector: %w", err)
+	}
+	minVersion := 0
+	if q.GetResourceVersion() != "" {
+		if minVersion, err = strconv.Atoi(q.GetResourceVersion()); err != nil {
+			minVersion = 0
+		}
+	}
+	return func(app *appv1.Application) bool {
+		if q.GetName() != "" && app.Name != q.GetName() {
+			return false
+		}
+		// Skip any application that is neither in the conrol plane's namespace
+		// nor in the list of enabled namespaces.
+		if app.Namespace != s.ns && !glob.MatchStringInList(s.enabledNamespaces, app.Namespace, false) {
+			return false
+		}
+		if !s.enf.Enforce(ctx.Value("claims"), rbacpolicy.ResourceApplications, rbacpolicy.ActionGet, app.RBACName(s.ns)) {
+			// do not emit apps user does not have accessing
+			return false
+		}
+
+		if appVersion, err := strconv.Atoi(app.ResourceVersion); err == nil && appVersion < minVersion {
+			return false
+		}
+
+		if q.GetMinName() != "" && app.Name < q.GetMinName() {
+			return false
+		}
+
+		if q.GetMaxName() != "" && app.Name > q.GetMaxName() {
+			return false
+		}
+
+		if !selector.Matches(labels.Set(app.GetLabels())) {
+			return false
+		}
+
+		repos := q.GetRepos()
+		if q.GetRepo() != "" {
+			repos = append(repos, q.GetRepo())
+		}
+
+		if len(repos) > 0 && !sets.NewString(repos...).Has(app.Spec.Source.RepoURL) {
+			return false
+		}
+
+		if len(q.HealthStatuses) > 0 && !sets.NewString(q.HealthStatuses...).Has(string(app.Status.Health.Status)) {
+			return false
+		}
+
+		if len(q.SyncStatuses) > 0 && !sets.NewString(q.SyncStatuses...).Has(string(app.Status.Sync.Status)) {
+			return false
+		}
+
+		if len(q.GetProjects()) > 0 && !sets.NewString(q.GetProjects()...).Has(app.Spec.GetProject()) {
+			return false
+		}
+
+		if len(q.GetClusters()) > 0 && !sets.NewString(q.GetClusters()...).Has(app.Spec.Destination.Server) {
+			return false
+		}
+
+		if len(q.GetNamespaces()) > 0 && !sets.NewString(q.GetNamespaces()...).Has(app.Spec.Destination.Namespace) {
+			return false
+		}
+		if autoSyncEnabled := q.AutoSyncEnabled; autoSyncEnabled != nil && (*autoSyncEnabled) != (app.Spec.SyncPolicy != nil && app.Spec.SyncPolicy.Automated != nil) {
+			return false
+		}
+		return true
+	}, nil
 }
