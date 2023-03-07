@@ -106,6 +106,7 @@ func processApplicationListField(v interface{}, fields map[string]interface{}, e
 		return map[string]interface{}{
 			"items":    items,
 			"metadata": appList.ListMeta,
+			"stats":    appList.Stats,
 		}, nil
 	}
 	return nil, errors.New("not an application list")
