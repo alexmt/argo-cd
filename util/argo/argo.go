@@ -661,16 +661,23 @@ func GetAppProjectByName(name string, projLister applicationsv1.AppProjectLister
 		return nil, fmt.Errorf("error getting app project %q: %w", name, err)
 	}
 	project := projOrig.DeepCopy()
-	repos, err := db.GetProjectRepositories(ctx, name)
+	if err := InjectProjectScopedResources(ctx, db, project); err != nil {
+		return nil, err
+	}
+	return GetAppVirtualProject(project, projLister, settingsManager)
+}
+
+func InjectProjectScopedResources(ctx context.Context, db db.ArgoDB, project *argoappv1.AppProject) error {
+	repos, err := db.GetProjectRepositories(ctx, project.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error getting project repositories: %w", err)
+		return fmt.Errorf("error getting project repositories: %w", err)
 	}
 	for _, repo := range repos {
 		project.Spec.SourceRepos = append(project.Spec.SourceRepos, repo.Repo)
 	}
-	clusters, err := db.GetProjectClusters(ctx, name)
+	clusters, err := db.GetProjectClusters(ctx, project.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error getting project clusters: %w", err)
+		return fmt.Errorf("error getting project clusters: %w", err)
 	}
 	for _, cluster := range clusters {
 		if len(cluster.Namespaces) == 0 {
@@ -681,7 +688,7 @@ func GetAppProjectByName(name string, projLister applicationsv1.AppProjectLister
 			}
 		}
 	}
-	return GetAppVirtualProject(project, projLister, settingsManager)
+	return nil
 }
 
 // GetAppProject returns a project from an application. It will also ensure

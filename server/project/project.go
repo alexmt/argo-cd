@@ -360,18 +360,25 @@ func (s *Server) Update(ctx context.Context, q *project.ProjectUpdateRequest) (*
 	s.projectLock.Lock(q.Project.Name)
 	defer s.projectLock.Unlock(q.Project.Name)
 
+	newProj := q.Project.DeepCopy()
+	if err := argo.InjectProjectScopedResources(ctx, s.db, newProj); err != nil {
+		return nil, err
+	}
 	oldProj, err := s.appclientset.ArgoprojV1alpha1().AppProjects(s.ns).Get(ctx, q.Project.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
+	if err := argo.InjectProjectScopedResources(ctx, s.db, oldProj); err != nil {
+		return nil, err
+	}
 
-	for _, cluster := range difference(q.Project.Spec.DestinationClusters(), oldProj.Spec.DestinationClusters()) {
+	for _, cluster := range difference(newProj.Spec.DestinationClusters(), oldProj.Spec.DestinationClusters()) {
 		if err := s.enf.EnforceErr(ctx.Value("claims"), rbacpolicy.ResourceClusters, rbacpolicy.ActionUpdate, cluster); err != nil {
 			return nil, err
 		}
 	}
 
-	for _, repoUrl := range difference(q.Project.Spec.SourceRepos, oldProj.Spec.SourceRepos) {
+	for _, repoUrl := range difference(newProj.Spec.SourceRepos, oldProj.Spec.SourceRepos) {
 		if err := s.enf.EnforceErr(ctx.Value("claims"), rbacpolicy.ResourceRepositories, rbacpolicy.ActionUpdate, repoUrl); err != nil {
 			return nil, err
 		}
@@ -419,12 +426,12 @@ func (s *Server) Update(ctx context.Context, q *project.ProjectUpdateRequest) (*
 	invalidDstCount := 0
 
 	for _, a := range srcValidatedApps {
-		if !q.Project.IsSourcePermitted(a.Spec.GetSource()) {
+		if !newProj.IsSourcePermitted(a.Spec.GetSource()) {
 			invalidSrcCount++
 		}
 	}
 	for _, a := range dstValidatedApps {
-		dstPermitted, err := q.Project.IsDestinationPermitted(a.Spec.Destination, getProjectClusters)
+		dstPermitted, err := newProj.IsDestinationPermitted(a.Spec.Destination, getProjectClusters)
 		if err != nil {
 			return nil, err
 		}
