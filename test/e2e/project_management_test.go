@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -618,4 +619,32 @@ func TestGetVirtualProjectMatch(t *testing.T) {
 	_, err = fixture.RunCli("app", "sync", fixture.Name(), "--resource", ":Service:guestbook-ui", "--timeout", fmt.Sprintf("%v", 10))
 	assert.Contains(t, err.Error(), "blocked by sync window")
 
+}
+
+func TestUpdateProjectWithScopedResources(t *testing.T) {
+	fixture.EnsureCleanState(t)
+
+	projectName := "proj-" + strconv.FormatInt(time.Now().Unix(), 10)
+	_, err := fixture.AppClientset.ArgoprojV1alpha1().AppProjects(
+		fixture.TestNamespace()).Create(context.Background(), &v1alpha1.AppProject{
+		ObjectMeta: metav1.ObjectMeta{Name: projectName},
+		Spec: v1alpha1.AppProjectSpec{
+			Destinations: []v1alpha1.ApplicationDestination{{Server: "*", Namespace: "*", Name: "*"}},
+			SourceRepos:  []string{"*"},
+		},
+	}, metav1.CreateOptions{})
+	require.NoError(t, err)
+	_, err = fixture.RunCli("app", "create", "guestbook",
+		"--repo", "https://github.com/argoproj/argocd-example-apps",
+		"--path", "kustomize-guestbook",
+		"--dest-server", "https://kubernetes.default.svc",
+		"--dest-namespace", "default",
+		"--project", projectName)
+	require.NoError(t, err)
+
+	_, err = fixture.RunCli("repo", "add", "https://github.com/argoproj/argocd-example-apps", "--project", projectName)
+	require.NoError(t, err)
+
+	_, err = fixture.RunCli("proj", "remove-source", projectName, "*")
+	assert.Nil(t, err)
 }
