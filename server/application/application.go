@@ -2944,6 +2944,7 @@ func (s *Server) getAppFilter(ctx context.Context, q *application.ApplicationQue
 		}
 
 		if len(q.GetClusters()) > 0 {
+			matched := false
 			for _, item := range q.GetClusters() {
 				url := ""
 				name := ""
@@ -2955,11 +2956,16 @@ func (s *Server) getAppFilter(ctx context.Context, q *application.ApplicationQue
 				} else {
 					name = item
 				}
-				if app.Spec.Destination.Server != "" && app.Spec.Destination.Server != url {
-					return false
-				} else if app.Spec.Destination.Name != "" && app.Spec.Destination.Name != name {
-					return false
+				if app.Spec.Destination.Server != "" && app.Spec.Destination.Server == url {
+					matched = true
+					break
+				} else if app.Spec.Destination.Name != "" && app.Spec.Destination.Name == name {
+					matched = true
+					break
 				}
+			}
+			if !matched {
+				return false
 			}
 		}
 
