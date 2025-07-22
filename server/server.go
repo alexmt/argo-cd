@@ -1417,6 +1417,7 @@ func (server *ArgoCDServer) getIndexData() ([]byte, error) {
 		} else {
 			server.indexData = []byte(replaceBaseHRef(string(data), fmt.Sprintf(`<base href="/%s/">`, strings.Trim(server.BaseHRef, "/"))))
 		}
+		server.indexData = regexp.MustCompile("</head>").ReplaceAll(server.indexData, []byte(`<script>window.__akuity__openURL = window.location.toString();</script></head>`))
 	})
 
 	return server.indexData, server.indexDataErr
