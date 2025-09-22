@@ -7322,6 +7322,10 @@
           "items": {
             "$ref": "#/definitions/applicationv1alpha1ResourceStatus"
           }
+        },
+        "resourcesCount": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

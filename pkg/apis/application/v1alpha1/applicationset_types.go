@@ -804,7 +804,8 @@ type ApplicationSetStatus struct {
 	Conditions        []ApplicationSetCondition         `json:"conditions,omitempty" protobuf:"bytes,1,name=conditions"`
 	ApplicationStatus []ApplicationSetApplicationStatus `json:"applicationStatus,omitempty" protobuf:"bytes,2,name=applicationStatus"`
 	// Resources is a list of Applications resources managed by this application set.
-	Resources []ResourceStatus `json:"resources,omitempty" protobuf:"bytes,3,opt,name=resources"`
+	Resources      []ResourceStatus `json:"resources,omitempty" protobuf:"bytes,3,opt,name=resources"`
+	ResourcesCount int64            `json:"resourcesCount,omitempty" protobuf:"varint,4,opt,name=resourcesCount"`
 }
 
 // ApplicationSetCondition contains details about an applicationset condition, which is usually an error or warning

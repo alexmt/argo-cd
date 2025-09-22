@@ -369,6 +369,8 @@ message ApplicationSetStatus {
 
   // Resources is a list of Applications resources managed by this application set.
   repeated ResourceStatus resources = 3;
+
+  optional int64 resourcesCount = 4;
 }
 
 // ApplicationSetStrategy configures how generated Applications are updated in sequence.
