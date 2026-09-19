@@ -2232,7 +2232,7 @@ func (s *Server) resolveSourceRevisions(ctx context.Context, a *v1alpha1.Applica
 			desiredRevisions[pos-1] = syncReq.Revisions[i]
 		}
 		for index, desiredRevision := range desiredRevisions {
-			if desiredRevision != "" && desiredRevision != text.FirstNonEmpty(a.Spec.GetSources()[index].TargetRevision, "HEAD") {
+			if desiredRevision != "" && desiredRevision != text.FirstNonEmpty(a.Spec.GetSources()[index].TargetRevision, "") {
 				// User is trying to sync to a different revision than the ones specified in the app sources
 				// Enforce that they have the 'override' privilege if the setting is enabled
 				if requireOverridePrivilegeForRevisionSync {
@@ -2257,7 +2257,7 @@ func (s *Server) resolveSourceRevisions(ctx context.Context, a *v1alpha1.Applica
 	}
 	source := a.Spec.GetSource()
 	if syncReq.GetRevision() != "" &&
-		syncReq.GetRevision() != text.FirstNonEmpty(source.TargetRevision, "HEAD") {
+		syncReq.GetRevision() != text.FirstNonEmpty(source.TargetRevision, "") {
 		// User is trying to sync to a different revision than the one specified in the app spec
 		// Enforce that they have the 'override' privilege if the setting is enabled
 		if requireOverridePrivilegeForRevisionSync {
