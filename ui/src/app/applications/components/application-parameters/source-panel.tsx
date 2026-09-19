@@ -21,7 +21,7 @@ function normalizeAppSource(app: models.Application, type: string): boolean {
         if (type === 'git' || type === 'oci') {
             source.path = source.chart;
             delete source.chart;
-            source.targetRevision = 'HEAD';
+            source.targetRevision = '';
         } else {
             source.chart = source.path;
             delete source.path;
@@ -51,7 +51,7 @@ const DEFAULT_APP: Partial<models.Application> = {
             repoURL: '',
             ref: '',
             name: '',
-            targetRevision: 'HEAD'
+            targetRevision: ''
         },
         sources: [],
         project: ''

@@ -110,7 +110,7 @@ export const SourcePanel = (props: SourcePanelProps) => {
                                                         source.path = source.chart;
                                                         delete source.chart;
                                                     }
-                                                    source.targetRevision = 'HEAD';
+                                                    source.targetRevision = '';
                                                     source.repoURL = type === 'git' ? lastGitOrHelmUrl.current : lastOciUrl.current === '' ? 'oci://' : lastOciUrl.current;
                                                     break;
                                                 case 'helm':

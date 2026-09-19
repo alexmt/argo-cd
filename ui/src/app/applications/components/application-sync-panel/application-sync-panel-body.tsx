@@ -43,7 +43,7 @@ export const ApplicationSyncPanelBody = ({
             {ctx => (
                 <Form
                     defaultValues={{
-                        revision: new URLSearchParams(ctx.history.location.search).get('revision') || source.targetRevision || 'HEAD',
+                        revision: new URLSearchParams(ctx.history.location.search).get('revision') || source.targetRevision || '',
                         resources: appResources.map((_, i) => i === syncResIndex || syncResIndex === -1),
                         syncOptions: application.spec.syncPolicy ? application.spec.syncPolicy.syncOptions : []
                     }}

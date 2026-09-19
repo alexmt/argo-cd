@@ -36,7 +36,7 @@ const DEFAULT_APP: Partial<models.Application> = {
         source: {
             path: '',
             repoURL: '',
-            targetRevision: 'HEAD'
+            targetRevision: ''
         },
         sources: [],
         project: ''
@@ -90,7 +90,7 @@ function normalizeAppSource(app: models.Application, type: string): boolean {
         if (type === 'git' || type === 'oci') {
             source.path = source.chart;
             delete source.chart;
-            source.targetRevision = 'HEAD';
+            source.targetRevision = '';
         } else {
             source.chart = source.path;
             delete source.path;
@@ -186,7 +186,7 @@ export const ApplicationCreatePanel = (props: {
     function handleAddSource(api: FormApi) {
         const updated = cloneDeep(api.getFormState().values) as models.Application;
         if (!multiSourceMode) {
-            updated.spec.sources = [{...(updated.spec.source || {path: '', repoURL: '', targetRevision: 'HEAD'})}, {path: '', repoURL: '', targetRevision: 'HEAD'}];
+            updated.spec.sources = [{...(updated.spec.source || {path: '', repoURL: '', targetRevision: ''})}, {path: '', repoURL: '', targetRevision: ''}];
             delete updated.spec.source;
             delete updated.spec.sourceHydrator;
             setIsHydratorEnabled(false);
@@ -195,7 +195,7 @@ export const ApplicationCreatePanel = (props: {
             if (!updated.spec.sources) {
                 updated.spec.sources = [];
             }
-            updated.spec.sources.push({path: '', repoURL: '', targetRevision: 'HEAD'});
+            updated.spec.sources.push({path: '', repoURL: '', targetRevision: ''});
         }
         api.setAllValues(updated);
     }
@@ -208,7 +208,7 @@ export const ApplicationCreatePanel = (props: {
         }
         sources.splice(index, 1);
         if (sources.length === 0) {
-            updated.spec.source = {path: '', repoURL: '', targetRevision: 'HEAD'};
+            updated.spec.source = {path: '', repoURL: '', targetRevision: ''};
             delete updated.spec.sources;
             setMultiSourceMode(false);
         } else if (sources.length === 1) {
