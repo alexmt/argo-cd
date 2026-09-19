@@ -9961,6 +9961,10 @@
           "type": "string",
           "title": "Github App Private Key PEM data"
         },
+        "headRef": {
+          "description": "HeadRef specifies the default Git ref used to test repository connectivity. If empty, defaults to HEAD.",
+          "type": "string"
+        },
         "inheritedCreds": {
           "type": "boolean",
           "title": "Whether credentials were inherited from a credential set"

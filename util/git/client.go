@@ -224,6 +224,8 @@ type nativeGitClient struct {
 	// tagPrefix filters git tags to only those with this prefix when resolving semver constraints.
 	// The prefix is stripped before comparison and re-added to the resolved tag name.
 	tagPrefix string
+	// headRef overrides the default remote reference.
+	headRef string
 }
 
 type runOpts struct {
@@ -293,6 +295,21 @@ func WithTagPrefix(prefix string) ClientOpts {
 	return func(c *nativeGitClient) {
 		c.tagPrefix = prefix
 	}
+}
+
+// WithHeadRef sets the default remote reference.
+func WithHeadRef(ref string) ClientOpts {
+	return func(c *nativeGitClient) {
+		c.headRef = ref
+	}
+}
+
+// HeadRef returns the configured default remote reference.
+func (m *nativeGitClient) HeadRef() string {
+	if m.headRef == "" {
+		return "HEAD"
+	}
+	return m.headRef
 }
 
 func NewClient(rawRepoURL string, creds Creds, insecure bool, enableLfs bool, proxy string, noProxy string, opts ...ClientOpts) (Client, error) {
@@ -790,8 +807,8 @@ func (m *nativeGitClient) Submodule(ctx context.Context) error {
 
 // Checkout checks out the specified revision
 func (m *nativeGitClient) Checkout(ctx context.Context, revision string, submoduleEnabled bool, cleanState bool) (string, error) {
-	if revision == "" || revision == "HEAD" {
-		revision = "origin/HEAD"
+	if revision == "" || revision == m.HeadRef() {
+		revision = "origin/" + m.HeadRef()
 	}
 	if out, err := m.runCmd(ctx, "checkout", "--force", revision); err != nil {
 		return out, fmt.Errorf("failed to checkout %s: %w", revision, err)
@@ -969,7 +986,7 @@ func (m *nativeGitClient) lsRemote(revision string) (string, error) {
 	}
 
 	if revision == "" {
-		revision = "HEAD"
+		revision = m.HeadRef()
 	}
 
 	maxV, err := versions.MaxVersion(revision, getGitTags(refs), m.tagPrefix)

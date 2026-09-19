@@ -2111,6 +2111,9 @@ message Repository {
 
   // AzureActiveDirectoryEndpoint specifies the Azure Active Directory endpoint used for Service Principal authentication. If empty will default to https://login.microsoftonline.com
   optional string azureActiveDirectoryEndpoint = 32;
+
+  // HeadRef specifies the default Git ref used to test repository connectivity. If empty, defaults to HEAD.
+  optional string headRef = 33;
 }
 
 // A RepositoryCertificate is either SSH known hosts entry or TLS certificate

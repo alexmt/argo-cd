@@ -136,6 +136,8 @@ type Repository struct {
 	AzureServicePrincipalTenantId string `json:"azureServicePrincipalTenantId,omitempty" protobuf:"bytes,31,opt,name=azureServicePrincipalTenantId"`
 	// AzureActiveDirectoryEndpoint specifies the Azure Active Directory endpoint used for Service Principal authentication. If empty will default to https://login.microsoftonline.com
 	AzureActiveDirectoryEndpoint string `json:"azureActiveDirectoryEndpoint,omitempty" protobuf:"bytes,32,opt,name=azureActiveDirectoryEndpoint"`
+	// HeadRef specifies the default Git ref used to test repository connectivity. If empty, defaults to HEAD.
+	HeadRef string `json:"headRef,omitempty" protobuf:"bytes,33,opt,name=headRef"`
 }
 
 // IsInsecure returns true if the repository has been configured to skip server verification or set to HTTP only

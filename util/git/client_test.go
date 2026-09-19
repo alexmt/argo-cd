@@ -2189,3 +2189,35 @@ func Test_fetch_authPromptRewrite(t *testing.T) {
 	// ... and the fix surfaces it as an actionable authentication error (the fix).
 	assert.Contains(t, err.Error(), "failed to authenticate to git repository", "expected the humanized authentication error")
 }
+
+func TestHeadRef(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		ref  string
+		want string
+	}{
+		{name: "default", want: "HEAD"},
+		{name: "custom", ref: "main", want: "main"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			hash := plumbing.NewHash("0123456789abcdef0123456789abcdef01234567")
+			cache := &fakeGitRefCache{cachedRefs: []*plumbing.Reference{
+				plumbing.NewHashReference(plumbing.ReferenceName(tc.want), hash),
+			}}
+			opts := []ClientOpts{WithHeadRef(tc.ref), WithCache(cache, true)}
+			client, err := NewClient("https://example.com/repo.git", NopCreds{}, false, false, "", "", opts...)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, client.(*nativeGitClient).HeadRef())
+
+			sha, err := client.LsRemote("")
+			require.NoError(t, err)
+			assert.Equal(t, hash.String(), sha)
+
+			require.NoError(t, TestRepo("https://example.com/repo.git", NopCreds{}, false, false, "", "", opts...))
+
+			cache.cachedRefs = []*plumbing.Reference{}
+			err = TestRepo("https://example.com/repo.git", NopCreds{}, false, false, "", "", opts...)
+			require.ErrorContains(t, err, "unable to ls-remote "+tc.want+" on repository:")
+		})
+	}
+}
