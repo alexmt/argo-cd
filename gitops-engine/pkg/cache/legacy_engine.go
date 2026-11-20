@@ -108,6 +108,7 @@ func (e *legacyEngine) sync() (err error) {
 
 	syncLock.Lock()
 	c.apisMeta = make(map[schema.GroupKind]*apiMeta)
+	c.listErrors = nil
 	c.resources = make(map[kube.ResourceKey]*Resource)
 	c.nsIndex = make(map[string]map[kube.ResourceKey]*Resource)
 	// Filled by the workers below and published once they finish.
@@ -190,6 +191,16 @@ func (e *legacyEngine) sync() (err error) {
 						syncLock.Unlock()
 						return nil
 					}
+				}
+				if isServerError(err) {
+					// Don't fail the whole cluster over one API: its watch retries the list, and
+					// ClusterInfo.UnavailableAPIs reports it until then.
+					c.log.Error(err, "Failed to list resources, retrying in the background", "groupKind", api.GroupKind.String(), "namespace", ns)
+					syncLock.Lock()
+					c.setListError(api.GroupKind, ns, err)
+					syncLock.Unlock()
+					go e.watchEvents(ctx, api, resClient, ns, "")
+					return nil
 				}
 				return fmt.Errorf("failed to load initial state of resource %s: %w", api.GroupKind.String(), err)
 			}
@@ -322,16 +333,26 @@ func (e *legacyEngine) loadInitialState(ctx context.Context, api kube.APIResourc
 		})
 	})
 	if err != nil {
+		if isServerError(err) {
+			setErr := func() error { c.setListError(api.GroupKind, ns, err); return nil }
+			if lock {
+				_ = runSynced(&c.lock, setErr)
+			} else {
+				_ = setErr()
+			}
+		}
 		return "", fmt.Errorf("failed to load initial state of resource %s: %w", api.GroupKind.String(), err)
 	}
 
 	if lock {
 		return resourceVersion, runSynced(&c.lock, func() error {
 			c.replaceResourceCache(api.GroupKind, items, ns)
+			c.setListError(api.GroupKind, ns, nil)
 			return nil
 		})
 	}
 	c.replaceResourceCache(api.GroupKind, items, ns)
+	c.setListError(api.GroupKind, ns, nil)
 	return resourceVersion, nil
 }
 

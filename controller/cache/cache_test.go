@@ -981,3 +981,27 @@ func Test_asResourceNode_same_namespace_parent(t *testing.T) {
 	assert.Equal(t, "my-deployment", resNode.ParentRefs[0].Name)
 	assert.Equal(t, "my-namespace", resNode.ParentRefs[0].Namespace, "Deployment parent should have same namespace")
 }
+
+func TestUnavailableAPIsError(t *testing.T) {
+	t.Parallel()
+	stsGK := schema.GroupKind{Group: "apps", Kind: "StatefulSet"}
+	unavailable := map[schema.GroupKind]error{stsGK: apierrors.NewServiceUnavailable("conversion webhook unavailable")}
+	target := func(apiVersion, kind string) *unstructured.Unstructured {
+		u := &unstructured.Unstructured{}
+		u.SetAPIVersion(apiVersion)
+		u.SetKind(kind)
+		return u
+	}
+	app := &appv1.Application{}
+
+	require.NoError(t, unavailableAPIsError(nil, app, []*unstructured.Unstructured{target("apps/v1", "StatefulSet")}))
+	require.NoError(t, unavailableAPIsError(unavailable, app, []*unstructured.Unstructured{target("apps/v1", "Deployment")}))
+
+	err := unavailableAPIsError(unavailable, app, []*unstructured.Unstructured{target("apps/v1", "StatefulSet")})
+	require.ErrorContains(t, err, "failed to list StatefulSet.apps")
+	assert.True(t, apierrors.IsServiceUnavailable(err))
+
+	// Resources the app no longer targets but still has live, which deletion and pruning would miss.
+	app.Status.Resources = []appv1.ResourceStatus{{Group: "apps", Kind: "StatefulSet"}}
+	require.Error(t, unavailableAPIsError(unavailable, app, nil))
+}

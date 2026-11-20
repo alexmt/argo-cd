@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os/exec"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -749,11 +750,37 @@ func (c *liveStateCache) GetManagedLiveObjs(destCluster *appv1.Cluster, a *appv1
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster info for %q: %w", destCluster.Server, err)
 	}
+	if err := unavailableAPIsError(clusterInfo.GetClusterInfo().UnavailableAPIs, a, targetObjs); err != nil {
+		return nil, err
+	}
 	// isManaged runs for every cached resource under the cache lock.
 	instanceName := a.InstanceName(c.settingsMgr.GetNamespace())
 	return clusterInfo.GetManagedLiveObjs(targetObjs, func(r *clustercache.Resource) bool {
 		return resInfo(r).AppName == instanceName
 	})
+}
+
+// unavailableAPIsError returns an error if a uses an API whose list is failing. Its live state for
+// that API is missing, so a comparison would report its resources missing, and deleting it would
+// orphan them.
+func unavailableAPIsError(unavailable map[schema.GroupKind]error, a *appv1.Application, targetObjs []*unstructured.Unstructured) error {
+	if len(unavailable) == 0 {
+		return nil
+	}
+	used := map[schema.GroupKind]bool{}
+	for _, obj := range targetObjs {
+		used[obj.GroupVersionKind().GroupKind()] = true
+	}
+	for _, res := range a.Status.Resources {
+		used[schema.GroupKind{Group: res.Group, Kind: res.Kind}] = true
+	}
+	var errs []error
+	for _, gk := range slices.SortedFunc(maps.Keys(unavailable), func(a, b schema.GroupKind) int { return strings.Compare(a.String(), b.String()) }) {
+		if used[gk] {
+			errs = append(errs, fmt.Errorf("failed to list %s: %w", gk, unavailable[gk]))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 func (c *liveStateCache) GetVersionsInfo(server *appv1.Cluster) (string, []kube.APIResourceInfo, error) {

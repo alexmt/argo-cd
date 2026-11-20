@@ -124,6 +124,9 @@ type ClusterInfo struct {
 	SyncError error
 	// APIResources holds list of API resources supported by the cluster
 	APIResources []kube.APIResourceInfo
+	// UnavailableAPIs holds the APIs whose last list failed with a server error, such as a broken
+	// conversion webhook. Their resources are missing from the cache until a retry succeeds.
+	UnavailableAPIs map[schema.GroupKind]error
 }
 
 // OnEventHandler is a function that handles Kubernetes event
@@ -241,7 +244,10 @@ func NewClusterCache(config *rest.Config, opts ...UpdateSettingsFunc) *clusterCa
 type store struct {
 	syncStatus clusterCacheSync
 
-	apisMeta              map[schema.GroupKind]*apiMeta
+	apisMeta map[schema.GroupKind]*apiMeta
+	// listErrors holds, by namespace, the server errors of APIs whose list is being retried.
+	// Guarded by lock.
+	listErrors            map[schema.GroupKind]map[string]error
 	batchEventsProcessing bool
 	// serverVersion and apiResources are read by their
 	// getters without c.lock, so writers publish a new value and never edit a
@@ -920,6 +926,30 @@ func (c *store) processApi(client dynamic.Interface, api kube.APIResourceInfo, c
 }
 
 // isRestrictedResource checks if the kube api call is unauthorized or forbidden
+// isServerError reports whether a list failed on the server's side, as with a broken conversion
+// webhook or an unavailable aggregated API, so the rest of the cluster can still sync.
+func isServerError(err error) bool {
+	return apierrors.IsInternalError(err) || apierrors.IsServiceUnavailable(err) || apierrors.IsTimeout(err) || apierrors.IsServerTimeout(err)
+}
+
+// setListError records err for gk in ns, or clears it if err is nil. Callers must hold c.lock.
+func (c *store) setListError(gk schema.GroupKind, ns string, err error) {
+	if err == nil {
+		delete(c.listErrors[gk], ns)
+		if len(c.listErrors[gk]) == 0 {
+			delete(c.listErrors, gk)
+		}
+		return
+	}
+	if c.listErrors == nil {
+		c.listErrors = map[schema.GroupKind]map[string]error{}
+	}
+	if c.listErrors[gk] == nil {
+		c.listErrors[gk] = map[string]error{}
+	}
+	c.listErrors[gk][ns] = err
+}
+
 func (c *store) isRestrictedResource(err error) bool {
 	return c.respectRBAC != RespectRbacDisabled && (apierrors.IsForbidden(err) || apierrors.IsUnauthorized(err))
 }
@@ -1478,7 +1508,18 @@ func (c *store) GetClusterInfo() ClusterInfo {
 	c.syncStatus.lock.Lock()
 	defer c.syncStatus.lock.Unlock()
 
+	var unavailable map[schema.GroupKind]error
+	for gk, byNamespace := range c.listErrors {
+		if unavailable == nil {
+			unavailable = map[schema.GroupKind]error{}
+		}
+		for _, err := range byNamespace {
+			unavailable[gk] = err
+			break
+		}
+	}
 	return ClusterInfo{
+		UnavailableAPIs:   unavailable,
 		APIsCount:         len(c.apisMeta),
 		K8SVersion:        c.GetServerVersion(),
 		ResourcesCount:    len(c.resources),

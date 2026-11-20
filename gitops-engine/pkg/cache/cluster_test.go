@@ -297,6 +297,36 @@ func Benchmark_sync_CrossNamespace(b *testing.B) {
 	}
 }
 
+func TestEnsureSynced_ServerErrorDoesNotFailCluster(t *testing.T) {
+	t.Parallel()
+	deploy := &appsv1.Deployment{APIVersion: "apps/v1", Kind: "Deployment", Name: "deploy", Namespace: "default"}
+	sts := &appsv1.StatefulSet{APIVersion: "apps/v1", Kind: "StatefulSet", Name: "sts", Namespace: "default"}
+	cluster := newCluster(t, deploy, sts)
+	var broken atomic.Bool
+	broken.Store(true)
+	client := cluster.kubectl.(*kubetest.MockKubectlCmd).DynamicClient.(*fake.FakeDynamicClient)
+	client.PrependReactor("list", "statefulsets", func(testcore.Action) (bool, runtime.Object, error) {
+		if broken.Load() {
+			return true, nil, apierrors.NewServiceUnavailable("conversion webhook unavailable")
+		}
+		return false, nil, nil
+	})
+	stsGK := schema.GroupKind{Group: "apps", Kind: "StatefulSet"}
+
+	require.NoError(t, cluster.EnsureSynced())
+	info := cluster.GetClusterInfo()
+	require.Contains(t, info.UnavailableAPIs, stsGK)
+	assert.True(t, apierrors.IsServiceUnavailable(info.UnavailableAPIs[stsGK]))
+	assert.Len(t, cluster.FindResources("default", func(r *Resource) bool { return r.Ref.Kind == "Deployment" }), 1)
+
+	// The watch retries the list and clears the error once it succeeds.
+	broken.Store(false)
+	require.Eventually(t, func() bool {
+		return len(cluster.GetClusterInfo().UnavailableAPIs) == 0 &&
+			len(cluster.FindResources("default", func(r *Resource) bool { return r.Ref.Kind == "StatefulSet" })) == 1
+	}, 10*time.Second, 50*time.Millisecond)
+}
+
 func TestEnsureSynced(t *testing.T) {
 	t.Parallel()
 	obj1 := &appsv1.Deployment{
